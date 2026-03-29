@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Splinter Magazine</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
 <style>
   :root {
     --black: #080c08;
@@ -16,8 +16,10 @@
     --green-dim: rgba(0,255,100,0.08);
     --green-glow: rgba(0,255,100,0.03);
     --white: #e8f0e8;
-    --muted: rgba(232,240,232,0.45);
+    --muted: rgba(232,240,232,0.72);
     --mono: 'JetBrains Mono', monospace;
+    --serif: 'Lora', serif;
+    --muted-bright: rgba(232,240,232,0.78);
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -401,6 +403,27 @@
   .fade-in { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
   .fade-in.visible { opacity: 1; transform: none; }
 
+
+  /* Lora for long-form reading */
+  .post-body p, .post-body blockquote {
+    font-family: var(--serif) !important;
+  }
+  .post-body p {
+    font-size: 16px !important;
+    line-height: 2 !important;
+    color: rgba(232,240,232,0.85) !important;
+  }
+  .post-body blockquote {
+    font-size: 15px !important;
+    font-style: italic !important;
+  }
+  .about-inner p {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 2;
+    color: rgba(232,240,232,0.82);
+  }
+
   @media (max-width: 800px) {
     nav { padding: 14px 20px; }
     .nav-links { display: none; }
@@ -423,11 +446,11 @@
   <a href="#" class="nav-logo" onclick="showPage('home'); return false;">splinter magazine</a>
   <ul class="nav-links">
     <li><a href="#" onclick="showPage('home'); return false;">Issues</a></li>
-    <li><a href="#" onclick="showPage('submit'); return false;">Submission Stream</a></li>
+    <li><a href="#" onclick="showSubmit(); return false;">Submission Stream</a></li>
     <li><a href="#" onclick="showPage('about'); return false;">About</a></li>
     <li><a href="#" onclick="showPage('requirements'); return false;">Submission Requirements</a></li>
   </ul>
-  <a href="#" class="nav-cta" onclick="showPage('submit'); return false;">Submit →</a>
+  <a href="#" class="nav-cta" onclick="showSubmit(); return false;">Submit →</a>
 </nav>
 
 <!-- HOME PAGE -->
@@ -442,8 +465,21 @@
  ▓▓▓▓ ▓     ▓▓▓▓▓▓▓▓▓▓▓▓▓    ▓  ▓▓  ▓▓▓▓▓▓▓    ▓</pre>
     <p class="hero-tagline">a space for the iconoclasts and intelligentsia</p>
     <div class="hero-actions">
-      <a href="#" class="btn-primary" onclick="showPage('submit'); return false;">Submit your work</a>
+      <a href="#" class="btn-primary" onclick="showSubmit(); return false;">Submit your work</a>
       <a href="#" class="btn-ghost" onclick="document.getElementById('blog-section').scrollIntoView({behavior:'smooth'}); return false;">Read the issues →</a>
+    </div>
+  </section>
+
+  <section style="padding: 0 48px; margin-bottom: 0;">
+    <div style="max-width:1100px;margin:0 auto;">
+      <div style="position:relative;overflow:hidden;border:1px solid var(--border);">
+        <img src="https://raw.githubusercontent.com/tbcarne/splinter-magazine/main/splinter_pic.png" 
+             alt="Splinter — artwork" 
+             style="width:100%;display:block;filter:brightness(0.92);">
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:12px 20px;background:rgba(8,12,8,0.6);font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;">
+          // Commissioned artwork for Splinter Magazine
+        </div>
+      </div>
     </div>
   </section>
 
@@ -519,7 +555,7 @@
         No other social platform exists purely as a collaborative thought space, where creators and consumers alike can review and engage in genuine discourse.
       </p>
       <div style="margin-top:40px;">
-        <a href="#" class="btn-primary" onclick="showPage('submit'); return false;">Submit your work</a>
+        <a href="#" class="btn-primary" onclick="showSubmit(); return false;">Submit your work</a>
       </div>
     </div>
   </section>
@@ -772,12 +808,30 @@ function triggerFades() {
   }, 100);
 }
 
-// FORM
+
+// SUBMISSION GATE
+function showSubmit() {
+  const hasSubmitted = sessionStorage.getItem('splinter_submitted');
+  if (hasSubmitted) {
+    showPage('submit');
+  } else {
+    document.getElementById('gate-modal').style.display = 'flex';
+  }
+}
+function closeGate() {
+  document.getElementById('gate-modal').style.display = 'none';
+}
+function proceedToSubmit() {
+  document.getElementById('gate-modal').style.display = 'none';
+  showPage('submit');
+}
 function handleSubmit(e) {
   e.preventDefault();
+  sessionStorage.setItem('splinter_submitted', 'true');
   document.getElementById('submit-confirm').style.display = 'block';
   e.target.reset();
 }
+
 
 // CURSOR
 const cursor = document.getElementById('cursor');
@@ -799,5 +853,19 @@ document.querySelectorAll('a, button').forEach(el => {
 // INIT FADES
 triggerFades();
 </script>
+
+<!-- SUBMISSION GATE MODAL -->
+<div id="gate-modal" style="display:none;position:fixed;inset:0;background:rgba(8,12,8,0.95);z-index:500;display:none;align-items:center;justify-content:center;padding:40px;">
+  <div style="max-width:480px;width:100%;border:1px solid var(--green);background:var(--card);padding:48px;">
+    <div style="font-size:11px;color:var(--green);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:16px;">// Access restricted</div>
+    <div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--white);margin-bottom:16px;line-height:1.2;">Read the arena.<br>But earn it first.</div>
+    <p style="font-family:var(--mono);font-size:13px;color:var(--muted);line-height:1.8;margin-bottom:32px;">The Submission Stream is only open to those who've submitted their own work. Put something in before you take something out.</p>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <button onclick="proceedToSubmit()" style="font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--black);background:var(--green);border:none;padding:12px 24px;cursor:none;">Submit your work →</button>
+      <button onclick="closeGate()" style="font-family:var(--mono);font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:none;border:1px solid var(--border-bright);padding:12px 24px;cursor:none;transition:color 0.2s;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
