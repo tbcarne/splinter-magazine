@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Splinter Magazine</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #080c08;
+    --dark: #0d110d;
+    --card: #111811;
+    --border: rgba(0,255,100,0.1);
+    --border-bright: rgba(0,255,100,0.3);
+    --green: #00ff64;
+    --green-dim: rgba(0,255,100,0.08);
+    --green-glow: rgba(0,255,100,0.03);
+    --white: #e8f0e8;
+    --muted: rgba(232,240,232,0.45);
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.7;
+    cursor: none;
+    overflow-x: hidden;
+  }
+
+  /* Scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.025) 2px, rgba(0,0,0,0.025) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* BG grid */
+  .bg-grid {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,100,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,100,0.015) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* Cursor */
+  .cursor {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    position: fixed; pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.15s, height 0.15s;
+    mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    width: 28px; height: 28px;
+    border: 1px solid rgba(0,255,100,0.35);
+    border-radius: 50%;
+    position: fixed; pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.2s;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 18px 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,12,8,0.94);
+    backdrop-filter: blur(12px);
+    position: relative; z-index: 1;
+  }
+  nav { position: fixed; }
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 15px; font-weight: 700;
+    color: var(--green);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+  }
+  .nav-links { display: flex; gap: 28px; list-style: none; }
+  .nav-links a {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--muted); text-decoration: none;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--green); }
+  .nav-cta {
+    font-family: var(--mono); font-size: 11px;
+    color: var(--black); background: var(--green);
+    padding: 7px 18px; text-decoration: none;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    font-weight: 700; transition: opacity 0.2s;
+  }
+  .nav-cta:hover { opacity: 0.85; }
+
+  section, nav, footer { position: relative; z-index: 1; }
+
+  /* HERO */
+  #home {
+    min-height: 100vh;
+    display: flex; align-items: center;
+    padding: 140px 48px 80px;
+    text-align: center;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .hero-label {
+    font-size: 11px; color: var(--green);
+    letter-spacing: 0.2em; text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+  .ascii-logo {
+    font-family: var(--mono);
+    font-size: clamp(6px, 1.2vw, 11px);
+    line-height: 1.2;
+    color: var(--green);
+    white-space: pre;
+    margin-bottom: 32px;
+    opacity: 0.9;
+    text-shadow: 0 0 20px rgba(0,255,100,0.4);
+  }
+  .hero-tagline {
+    font-size: 13px; color: var(--muted);
+    letter-spacing: 0.08em;
+    margin-bottom: 48px;
+    font-style: italic;
+  }
+  .hero-actions { display: flex; gap: 16px; justify-content: center; }
+  .btn-primary {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--black); background: var(--green);
+    padding: 12px 24px; text-decoration: none;
+    transition: opacity 0.2s; display: inline-block;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .btn-ghost {
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); text-decoration: none;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-bright);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .btn-ghost:hover { color: var(--white); border-color: var(--white); }
+
+  /* BLOG GRID */
+  #blog {
+    padding: 80px 48px 120px;
+  }
+  .section-label {
+    font-size: 11px; color: var(--green);
+    letter-spacing: 0.15em; text-transform: uppercase;
+    margin-bottom: 48px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::before {
+    content: ''; display: block;
+    width: 24px; height: 1px; background: var(--green);
+  }
+  .blog-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .blog-card {
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 32px;
+    text-decoration: none; color: inherit;
+    display: flex; flex-direction: column;
+    transition: border-color 0.2s, background 0.2s;
+    cursor: none;
+  }
+  .blog-card:hover {
+    border-color: var(--green);
+    background: var(--green-dim);
+  }
+  .blog-card-meta {
+    font-size: 11px; color: var(--muted);
+    text-align: right; margin-bottom: 20px;
+    letter-spacing: 0.05em;
+  }
+  .blog-card-title {
+    font-size: 16px; font-weight: 700;
+    color: var(--green); margin-bottom: 12px;
+    line-height: 1.4;
+  }
+  .blog-card-excerpt {
+    font-size: 12px; color: var(--muted);
+    line-height: 1.8; flex: 1;
+    margin-bottom: 28px;
+    font-style: italic;
+  }
+  .blog-card-read {
+    font-size: 11px; color: var(--green);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid var(--border-bright);
+    padding: 8px 16px; display: inline-block;
+    transition: background 0.2s, color 0.2s;
+    align-self: flex-start;
+  }
+  .blog-card:hover .blog-card-read {
+    background: var(--green); color: var(--black);
+  }
+
+  /* ABOUT SECTION */
+  #about {
+    padding: 100px 48px;
+    background: var(--dark);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .about-inner { max-width: 680px; margin: 0 auto; }
+  .about-inner p {
+    font-size: 14px; color: var(--muted);
+    line-height: 1.9; margin-bottom: 20px;
+  }
+  .about-inner p em { color: var(--white); font-style: normal; }
+
+  /* SUBMISSION STREAM */
+  #submit {
+    padding: 100px 48px;
+  }
+  .submit-inner { max-width: 680px; margin: 0 auto; }
+  .submit-arena {
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 700; color: var(--green);
+    margin-bottom: 32px; letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .submit-desc {
+    font-size: 13px; color: var(--muted);
+    line-height: 1.9; margin-bottom: 40px;
+  }
+  .submit-form { display: flex; flex-direction: column; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label {
+    font-size: 11px; color: var(--green);
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .form-input, .form-textarea {
+    font-family: var(--mono); font-size: 13px;
+    color: var(--white); background: var(--card);
+    border: 1px solid var(--border);
+    padding: 12px 16px; outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+  }
+  .form-input:focus, .form-textarea:focus {
+    border-color: var(--green);
+  }
+  .form-textarea { min-height: 200px; line-height: 1.8; }
+  .form-submit {
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--black); background: var(--green);
+    border: none; padding: 14px 32px;
+    cursor: none; transition: opacity 0.2s;
+    align-self: flex-start; margin-top: 8px;
+  }
+  .form-submit:hover { opacity: 0.85; }
+
+  /* REQUIREMENTS */
+  #requirements {
+    padding: 100px 48px;
+    background: var(--dark);
+    border-top: 1px solid var(--border);
+  }
+  .req-inner { max-width: 680px; margin: 0 auto; }
+  .req-title {
+    font-size: 11px; color: var(--green);
+    letter-spacing: 0.15em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .req-heading {
+    font-size: clamp(22px, 3vw, 32px); font-weight: 700;
+    color: var(--white); margin-bottom: 32px;
+    line-height: 1.2;
+  }
+  .req-intro {
+    font-size: 13px; color: var(--muted);
+    line-height: 1.9; margin-bottom: 32px;
+    font-style: italic;
+  }
+  .req-list { list-style: none; display: flex; flex-direction: column; gap: 1px; }
+  .req-list li {
+    font-size: 12px; color: var(--muted);
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    line-height: 1.7;
+    display: flex; gap: 16px; align-items: flex-start;
+  }
+  .req-list li .req-num {
+    color: var(--green); font-size: 11px;
+    flex-shrink: 0; padding-top: 1px;
+  }
+  .req-sub { list-style: none; display: flex; flex-direction: column; gap: 1px; margin-top: 8px; }
+  .req-sub li {
+    padding: 10px 16px; border: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+    font-size: 11px;
+  }
+
+  /* INDIVIDUAL BLOG POST */
+  .blog-post { display: none; }
+  .blog-post.active { display: block; }
+  #post-view {
+    padding: 120px 48px 100px;
+    max-width: 720px; margin: 0 auto;
+  }
+  .post-back {
+    font-size: 11px; color: var(--green);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    text-decoration: none; display: inline-flex;
+    align-items: center; gap: 8px; margin-bottom: 48px;
+    cursor: none; transition: opacity 0.2s;
+  }
+  .post-back:hover { opacity: 0.7; }
+  .post-meta {
+    font-size: 11px; color: var(--muted);
+    letter-spacing: 0.05em; margin-bottom: 12px;
+  }
+  .post-title {
+    font-size: clamp(22px, 3.5vw, 36px); font-weight: 700;
+    color: var(--white); line-height: 1.15;
+    margin-bottom: 12px; letter-spacing: -0.01em;
+  }
+  .post-epigraph {
+    font-size: 13px; color: var(--green);
+    font-style: italic; margin-bottom: 48px;
+    padding-left: 20px;
+    border-left: 2px solid var(--border-bright);
+    line-height: 1.8;
+  }
+  .post-body p {
+    font-size: 14px; color: var(--muted);
+    line-height: 1.95; margin-bottom: 24px;
+  }
+  .post-body p em { color: var(--white); font-style: normal; }
+  .post-body blockquote {
+    border-left: 2px solid var(--green);
+    padding: 12px 0 12px 24px;
+    margin: 32px 0;
+    font-style: italic; color: var(--green);
+    font-size: 13px; line-height: 1.8;
+  }
+  .post-divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 48px 0;
+  }
+  .post-next {
+    font-size: 11px; color: var(--muted);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* FOOTER */
+  footer {
+    padding: 40px 48px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-logo { font-size: 13px; font-weight: 700; color: var(--green); }
+  .footer-meta { font-size: 11px; color: var(--muted); text-align: right; line-height: 1.8; }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-links a {
+    font-size: 11px; color: var(--muted); text-decoration: none;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--green); }
+
+  /* PAGE SYSTEM */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* FADE */
+  .fade-in { opacity: 0; transform: translateY(16px); transition: opacity 0.5s ease, transform 0.5s ease; }
+  .fade-in.visible { opacity: 1; transform: none; }
+
+  @media (max-width: 800px) {
+    nav { padding: 14px 20px; }
+    .nav-links { display: none; }
+    #home, #blog, #about, #submit, #requirements { padding-left: 20px; padding-right: 20px; }
+    footer { padding: 28px 20px; flex-direction: column; gap: 20px; text-align: center; }
+    .footer-meta { text-align: center; }
+    .blog-grid { grid-template-columns: 1fr; }
+    #post-view { padding: 100px 20px 80px; }
+    .ascii-logo { font-size: 5px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav>
+  <a href="#" class="nav-logo" onclick="showPage('home'); return false;">splinter magazine</a>
+  <ul class="nav-links">
+    <li><a href="#" onclick="showPage('home'); return false;">Issues</a></li>
+    <li><a href="#" onclick="showPage('submit'); return false;">Submission Stream</a></li>
+    <li><a href="#" onclick="showPage('about'); return false;">About</a></li>
+    <li><a href="#" onclick="showPage('requirements'); return false;">Submission Requirements</a></li>
+  </ul>
+  <a href="#" class="nav-cta" onclick="showPage('submit'); return false;">Submit →</a>
+</nav>
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <section id="home">
+    <div class="hero-label">// splinter magazine</div>
+    <pre class="ascii-logo"> ░░░░ ░░░░░ ░     ░░░░░░░    ░░░░░░░░░░░░░░░░░░
+░     ░    ░░       ░░  ░░   ░  ░░  ░     ░    ░
+ ▒▒▒▒ ▒▒▒▒▒ ▒       ▒▒  ▒▒▒  ▒  ▒▒  ▒▒▒▒▒ ▒▒▒▒▒
+     ▒▒     ▒       ▒▒  ▒  ▒▒▒  ▒▒  ▒▒▒▒▒ ▒  ▒▒
+     ▓▓     ▓       ▓▓  ▓   ▓▓  ▓▓  ▓     ▓   ▓▓
+ ▓▓▓▓ ▓     ▓▓▓▓▓▓▓▓▓▓▓▓▓    ▓  ▓▓  ▓▓▓▓▓▓▓    ▓</pre>
+    <p class="hero-tagline">a space for the iconoclasts and intelligentsia</p>
+    <div class="hero-actions">
+      <a href="#" class="btn-primary" onclick="showPage('submit'); return false;">Submit your work</a>
+      <a href="#" class="btn-ghost" onclick="document.getElementById('blog-section').scrollIntoView({behavior:'smooth'}); return false;">Read the issues →</a>
+    </div>
+  </section>
+
+  <section id="blog-section" style="padding: 0 48px 48px;">
+    <div style="max-width:1100px;margin:0 auto;">
+      <div class="section-label">from the horse's mouth — blog</div>
+      <div class="blog-grid">
+        <a href="#" class="blog-card fade-in" onclick="showPost('beauty'); return false;">
+          <div class="blog-card-meta">4 Minute Read</div>
+          <div class="blog-card-title">The Beauty of the Eccentric</div>
+          <div class="blog-card-excerpt">'I love weird and wacky people, and you should too.'</div>
+          <span class="blog-card-read">Read the blog</span>
+        </a>
+        <a href="#" class="blog-card fade-in" onclick="showPost('eternal'); return false;">
+          <div class="blog-card-meta">4 Minute Read</div>
+          <div class="blog-card-title">Eternal Return</div>
+          <div class="blog-card-excerpt">'I'd tell them put me back in it/ I would do it again.'</div>
+          <span class="blog-card-read">Read the blog</span>
+        </a>
+        <a href="#" class="blog-card fade-in" onclick="showPost('curiosity'); return false;">
+          <div class="blog-card-meta">3 Minute Read</div>
+          <div class="blog-card-title">Curiosity Killed the Cat, or The Case for Curiosity</div>
+          <div class="blog-card-excerpt">'You don't know what it is, but it's there, like a splinter in your mind, driving you mad.'</div>
+          <span class="blog-card-read">Read the blog</span>
+        </a>
+        <a href="#" class="blog-card fade-in" onclick="showPost('whisper'); return false;">
+          <div class="blog-card-meta">2 Minute Read</div>
+          <div class="blog-card-title">Writing as a Whisper of the Infinite</div>
+          <div class="blog-card-excerpt">'so long lives this, and this gives life to me'</div>
+          <span class="blog-card-read">Read the blog</span>
+        </a>
+        <a href="#" class="blog-card fade-in" onclick="showPost('name'); return false;">
+          <div class="blog-card-meta">4 Minute Read</div>
+          <div class="blog-card-title">What's in a name?</div>
+          <div class="blog-card-excerpt">'That which we call a rose/ By any other name would smell as sweet'</div>
+          <span class="blog-card-read">Read the blog</span>
+        </a>
+        <a href="#" class="blog-card fade-in" onclick="showPost('useless'); return false;">
+          <div class="blog-card-meta">5 Minute Read</div>
+          <div class="blog-card-title">The Use of Useless Things</div>
+          <div class="blog-card-excerpt">'When a person thinks only of outcome and not at all of journey, they lose the greatness that is found in loving process.'</div>
+          <span class="blog-card-read">Read the blog</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">splinter magazine</div>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('home'); return false;">Issues</a>
+      <a href="#" onclick="showPage('submit'); return false;">Submit</a>
+      <a href="#" onclick="showPage('about'); return false;">About</a>
+      <a href="#" onclick="showPage('requirements'); return false;">Requirements</a>
+    </div>
+    <div class="footer-meta">© Tom Carne | 2026<br>v11.02.2026</div>
+  </footer>
+</div>
+
+<!-- ABOUT PAGE -->
+<div class="page" id="page-about">
+  <section id="about" style="min-height:100vh;padding-top:140px;">
+    <div class="about-inner">
+      <div class="section-label">About Splinter</div>
+      <h2 style="font-size:clamp(24px,3.5vw,40px);font-weight:700;color:var(--white);margin-bottom:32px;line-height:1.15;letter-spacing:-0.01em;">Who are we?</h2>
+      <p>
+        Morpheus told Neo in <em>The Matrix</em> that 'there's something wrong with the world. You don't know what it is, but it's there, like a splinter in your mind, driving you mad.' We operate under the firm belief that creative iconoclasts, holding splinters in their mind, continue to change the world.
+      </p>
+      <p>
+        Splinter is a space for those people. A peer-judged platform for long-form writing — where the best ideas surface through the community, not through an editor's taste.
+      </p>
+      <p>
+        No other social platform exists purely as a collaborative thought space, where creators and consumers alike can review and engage in genuine discourse.
+      </p>
+      <div style="margin-top:40px;">
+        <a href="#" class="btn-primary" onclick="showPage('submit'); return false;">Submit your work</a>
+      </div>
+    </div>
+  </section>
+  <footer>
+    <div class="footer-logo">splinter magazine</div>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('home'); return false;">Issues</a>
+      <a href="#" onclick="showPage('submit'); return false;">Submit</a>
+      <a href="#" onclick="showPage('about'); return false;">About</a>
+      <a href="#" onclick="showPage('requirements'); return false;">Requirements</a>
+    </div>
+    <div class="footer-meta">© Tom Carne | 2026<br>v11.02.2026</div>
+  </footer>
+</div>
+
+<!-- SUBMISSION STREAM PAGE -->
+<div class="page" id="page-submit">
+  <section id="submit" style="min-height:100vh;padding-top:140px;">
+    <div class="submit-inner">
+      <div class="section-label">Submission Stream</div>
+      <div class="submit-arena">Welcome to the arena.</div>
+      <p class="submit-desc">
+        Submit original, unpublished work. Essays, arguments, observations — anything worth reading. The community judges what rises. Read the <a href="#" onclick="showPage('requirements'); return false;" style="color:var(--green);text-decoration:none;">submission requirements</a> before sending.
+      </p>
+      <form class="submit-form" onsubmit="handleSubmit(event)">
+        <div class="form-group">
+          <label class="form-label">// Your name</label>
+          <input type="text" class="form-input" placeholder="Name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">// Email</label>
+          <input type="email" class="form-input" placeholder="email@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">// Title of submission</label>
+          <input type="text" class="form-input" placeholder="Title" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">// Your submission</label>
+          <textarea class="form-textarea" placeholder="Paste your submission here..." required></textarea>
+        </div>
+        <button type="submit" class="form-submit">Submit →</button>
+      </form>
+      <div id="submit-confirm" style="display:none;margin-top:32px;padding:24px;border:1px solid var(--green);background:var(--green-dim);font-size:13px;color:var(--green);">
+        ✓ Submission received. We'll be in touch.
+      </div>
+    </div>
+  </section>
+  <footer>
+    <div class="footer-logo">splinter magazine</div>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('home'); return false;">Issues</a>
+      <a href="#" onclick="showPage('submit'); return false;">Submit</a>
+      <a href="#" onclick="showPage('about'); return false;">About</a>
+      <a href="#" onclick="showPage('requirements'); return false;">Requirements</a>
+    </div>
+    <div class="footer-meta">© Tom Carne | 2026<br>v11.02.2026</div>
+  </footer>
+</div>
+
+<!-- REQUIREMENTS PAGE -->
+<div class="page" id="page-requirements">
+  <section id="requirements" style="min-height:100vh;padding-top:140px;">
+    <div class="req-inner">
+      <div class="req-title">// splinter submission requirements</div>
+      <div class="req-heading">Trust Is Everything</div>
+      <p class="req-intro">We are operating on a trust-based system. Don't abuse that trust. The only rules of Splinter ('the Journal') are:</p>
+      <ul class="req-list">
+        <li>
+          <span class="req-num">1.</span>
+          <span>Must be original work and previously unpublished. By submitting content, you warrant that you are the original author or have obtained all necessary permissions for publication.</span>
+        </li>
+        <li>
+          <span class="req-num">2.</span>
+          <span>The Journal reserves the right to review, edit, or reject any submission at its sole discretion.</span>
+        </li>
+        <li>
+          <span class="req-num">3.</span>
+          <span>You are solely responsible for your submission. The Journal accepts no liability for any loss or damage arising from the publication of your submission, to the extent permitted by law.</span>
+        </li>
+        <li style="flex-direction:column;gap:8px;">
+          <div style="display:flex;gap:16px;align-items:flex-start;">
+            <span class="req-num">4.</span>
+            <span>Content must not:</span>
+          </div>
+          <ul class="req-sub">
+            <li><span style="color:var(--green);margin-right:10px;">a.</span>Contain defamatory, obscene, offensive, abusive, or otherwise unlawful content; or</li>
+            <li><span style="color:var(--green);margin-right:10px;">b.</span>Contain hate speech, inciting violence, or promoting discrimination based on race, religion, gender, sexual orientation, disability, or any other protected attribute; or</li>
+            <li><span style="color:var(--green);margin-right:10px;">c.</span>Infringe the intellectual property rights, privacy, or other rights of any third party; or</li>
+            <li><span style="color:var(--green);margin-right:10px;">d.</span>Contain threats, harassment, or bullying; or</li>
+            <li><span style="color:var(--green);margin-right:10px;">e.</span>Violate any applicable law, including but not limited to the Racial Discrimination Act 1975 (Cth), Sex Discrimination Act 1984 (Cth), Disability Discrimination Act 1992 (Cth), and relevant state/territory anti-discrimination laws.</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </section>
+  <footer>
+    <div class="footer-logo">splinter magazine</div>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('home'); return false;">Issues</a>
+      <a href="#" onclick="showPage('submit'); return false;">Submit</a>
+      <a href="#" onclick="showPage('about'); return false;">About</a>
+      <a href="#" onclick="showPage('requirements'); return false;">Requirements</a>
+    </div>
+    <div class="footer-meta">© Tom Carne | 2026<br>v11.02.2026</div>
+  </footer>
+</div>
+
+<!-- BLOG POST VIEW -->
+<div class="page" id="page-post">
+  <div id="post-view">
+    <a href="#" class="post-back" onclick="showPage('home'); return false;">← Back to issues</a>
+    <div id="post-content"></div>
+  </div>
+  <footer>
+    <div class="footer-logo">splinter magazine</div>
+    <div class="footer-links">
+      <a href="#" onclick="showPage('home'); return false;">Issues</a>
+      <a href="#" onclick="showPage('submit'); return false;">Submit</a>
+      <a href="#" onclick="showPage('about'); return false;">About</a>
+      <a href="#" onclick="showPage('requirements'); return false;">Requirements</a>
+    </div>
+    <div class="footer-meta">© Tom Carne | 2026<br>v11.02.2026</div>
+  </footer>
+</div>
+
+<script>
+// POST DATA
+const posts = {
+  curiosity: {
+    title: "Curiosity Killed the Cat, or The Case for Curiosity",
+    epigraph: "'You don't know what it is, but it's there, like a splinter in your mind, driving you mad.' – Morpheus, The Matrix.",
+    date: "Feb 15, 2026", readTime: "3 min read",
+    body: `<p>On a shameless dive into r/ShowerThoughts, I stumbled across a post by Xereth_3 that reworked the idiom 'curiosity killed the cat' with the rebuttal that the 'cat has nine lives'. Although a potentially dubious forum for article inspiration, Xereth_3 has a point. Curiosity may kill the idiomatic cat, but it can be transformative to creating a good life.</p>
+<p>Ancient Greek philosopher Socrates, as an example, was a paragon of curiosity. He was renowned (notoriously) for walking tirelessly around the Athenian square, interrogating annoyed passersby on such simple-to-answer questions as 'what is truth?' and 'what is justice?'. Indeed, Socrates often would test both himself and others through relentless questioning until a position either crystallised or crumbled: it is oft-quoted that Socrates proclaimed an 'unexamined life' to be 'not worth living'.</p>
+<p>I'm not advocating for people to accost strangers with these sorts of questions. However, there is something to be said for the idea that curiosity enriches lives and characters. On the one hand, curiosity exposes you to a wide range of possibilities, to things and people you may never realise you are interested in unless you actively practice curiosity. On the other, curiosity about beliefs helps to sharpen them: beliefs, in my opinion, are only worth having and defending if they can be held up to concerted close scrutiny and survive.</p>
+<p>Indeed, a lack of curiosity can often be equated with cowardice. If you don't want to hold your firm beliefs up to scrutiny, it can indicate a latent fear that these beliefs aren't so firm: equally, the refusal to explore other possibilities in life might stem from an insecurity or latent awareness that the path you have chosen is unfulfilling.</p>
+<p>It is worth thinking about when you last truly stepped back and evaluated your life. Or even when you last actively set out to learn something new. It is deeply concerning, as Maria Popova references in her Marginalian article (a great site and worth exploring), that curiosity has been construed by thinkers, even those as prominent as Aristotle, as a 'witless tendency to pry into things that didn't concern us'.</p>
+<p>Watching The Matrix as a 14-year-old — and having now watched it five times since — opened my conscious mind to the benefits of curiosity. The blue pill and red pill analogy from The Matrix (although it has been very problematically repurposed) holds firm to the value of curiosity in everyday life: we are unconsciously faced with the choice to not question our world and float through life (blue pill) or to harness curiosity to learn about the world and ourselves in a meaningful way (red).</p>
+<p>Floating through life creates a sense of restless ennui: it is the 'splinter in your mind' that nags at you and subtly, when you look for it, tells you something is not right in your life or the world. When you free your mind by practising curiosity, challenge yourself to open up to other perspectives and abandon preconception, that is where true growth occurs.</p>
+<p>We are everyday given a choice to accept our world as it is or to question things and pave an independent path. This doesn't have to mean you ask massive questions like Socrates asking Athenian passersby 'what is Justice?'. Seemingly smaller questions can change the world: AirBnB's founders asking why no system enabling homes to be rented existed, Uber's founders asking why you couldn't summon a ride from the tap of a phone, or Australia's own Mel Perkins of Canva asking why no tool existed to make design easy for everyone. All were curious, and acted on their curiosity to create world-changing companies that enacted real social benefit.</p>
+<p>Curiosity may kill the cat, but it creates thinkers, movers, and shakers. Interesting people are curious people. If nothing else, if you don't want to be boring and don't want to be bored, be curious.</p>`
+  },
+  whisper: {
+    title: "Writing as a Whisper of the Infinite",
+    epigraph: "'so long lives this, and this gives life to me'",
+    date: "Feb 15, 2026", readTime: "2 min read",
+    body: `<p>Joyce remarked that a writer is 'a priest of eternal imagination, transmuting the daily bread of experience into the radiant body of everliving life'. The extractable point from this flowery prose is that writing, as a medium, has the capacity to immortalise. There is a legitimate sense in which the written word moves that which it records to a zone beyond death, as it freezes moments in time that would otherwise fleet away, as moments tend to do.</p>
+<p>Familiar versions of this phenomenon abound. Publications of posthumous letters or diary entries preserve identities and stories beyond their ephemeral embodied life — famously, see Anne Frank's <em>The Diary of a Young Girl</em>, or, less famously, see Charles Bukowski's selected musings in <em>On Writing</em>. Indeed, Shakespeare's Sonnet 18 purports to confer eternal life on the speaker's muse, as his existence in the poem's 'eternal lines' defies the inevitability of her death. In characteristic Shakespearean fashion, the closing couplet captures the profundity of this point: 'So long as men can breathe or eyes can see/ So long lives this, and this gives life to thee'.</p>
+<p>In these instances, people are not cryogenically but linguistically frozen.</p>
+<p>Yet, not only does language preserve life but also animates life, and in this sense is not only a freezer but also an oven (to borrow from the natal idiom 'bun in the oven').</p>
+<p>There are obvious examples of this in prominent religious texts. The Christian God said 'Let there be light', and 'there was light'. The act of divine speech is an act of creation. Indeed, John's Gospel states that 'In the beginning was the Word, and the Word was with God, and the Word was God'. Comparably, in Islam, "When He [Allah] decrees a matter, He simply tells it 'Be!'. And it is!".</p>
+<p>In a similar vein — albeit considering the written, not spoken, word — in the Jewish Kabbalah tradition, the 22 consonants of the Hebrew alphabet are not arbitrary signs but instead divine building blocks. The world, for Kabbalists, is a kind of poem composed by God out of these eternal letters. This concept is represented by the myth of the Golem, wherein the Golem is brought to life by the placing of a divine letter on his forehead, and its life taken away whenever that letter is removed.</p>
+<p>In this sense, writing can be seen as a kind of Horcrux. A Horcrux, in JK Rowling's Harry Potter, immortalises its creator's life on the condition that the creator has committed murder, for as long as the Horcrux remains intact. The written word immortalises its creator insofar as the writing is being read, and with no prerequisite of murder. Writing freezes its creators in time, and gives life to their ideas and identities. Perhaps, instead, Shakespeare's Sonnet 18 should have concluded thus: 'So long lives this, and this gives life to me'.</p>`
+  },
+  eternal: {
+    title: "Eternal Return",
+    epigraph: "'I'd tell them put me back in it/ I would do it again.'",
+    date: "Feb 15, 2026", readTime: "4 min read",
+    body: `<p>The question has often been asked: how can I know if I am living a good life? Luckily, Nietzsche has provided a metric, prefigured by the following hypothetical scenario:</p>
+<blockquote>What if some day or night a demon were to steal into your loneliest loneliness and say to you: 'This life as you now live and have lived it you will have to live once again and innumerable times again; and there will be nothing new in it, but every pain and every joy and every thought and sigh and everything unspeakably small or great in your life must return to you, all in the same succession and sequence.'</blockquote>
+<p>The question that emerges from this provocative scenario, known as the 'eternal recurrence' test, is whether you would be 1) overjoyed at the prospect of living every aspect of your life again infinitely, or 2) depressed and despondent. If you would want your life, in exact duplicate, to eternally recur, then and only then are you living a good life.</p>
+<p>It is essentially the deathbed test in different dress. If you knew you were to die tomorrow, would you not only be completely content with the life you've lived, but even still so in love with the life you lived that you'd want to do it all over again, ad infinitum?</p>
+<p>If the answer is yes, then you would joyously call out 'da capo' (musical term for restarting a piece from the beginning). You would scream 'again', or 'da capo', 'not only to yourself, but to the whole drama, the whole spectacle'. All the highs and lows you want, in fact you crave, to live again. Francesca (the eponymous speaker in Hozier's hit song — sent to Hell for the life she led), is one example: as she voices 'I'd tell them put me back in it/ I would do it again'.</p>
+<p>If the answer is no, and, be honest, it probably is, the question then is what can you actually change about your life? If you are truly honest with yourself, which is the most powerful and important thing you can do — put simply, what is your life lacking? Are you going to die wondering, or are you going to do something about it?</p>
+<p>If you are at a loss to answer this question, Nietzsche here argues one of the more powerful tools you can access is envy. Be aware of who you envy, and pinpoint why you envy them. For instance, it is common to envy those with a better physique, with better relationships, a healthier bank account. These are emotions that can be channelled into change.</p>
+<p>Dare to live: for to live well you have to be alive. Dare to be honest with yourself, and really honest with yourself, about your own deficiencies and improvement possibilities. If you address, and action, these changes, then and only then can you scream 'da capo!'.</p>
+<p>It is fitting here to end with a poem, my favourite, and one which acknowledges the reality of our existence — there is no eternal recurrence, we only get one chance to burn brightly, one chance to fork lightning with our words and deeds.</p>
+<blockquote>Do not go gentle into that good night,<br>Old age should burn and rave at close of day;<br>Rage, rage against the dying of the light.<br><br>Though wise men at their end know dark is right,<br>Because their words had forked no lightning they<br>Do not go gentle into that good night.<br><br>Good men, the last wave by, crying how bright<br>Their frail deeds might have danced in a green bay,<br>Rage, rage against the dying of the light.<br><br>Wild men who caught and sang the sun in flight,<br>And learn, too late, they grieved it on its way,<br>Do not go gentle into that good night.<br><br>Grave men, near death, who see with blinding sight<br>Blind eyes could blaze like meteors and be gay,<br>Rage, rage against the dying of the light.<br><br>And you, my father, there on the sad height,<br>Curse, bless, me now with your fierce tears, I pray.<br>Do not go gentle into that good night.<br>Rage, rage against the dying of the light.</blockquote>`
+  },
+  beauty: {
+    title: "The Beauty of the Eccentric",
+    epigraph: "'I love weird and wacky people, and you should too.'",
+    date: "Feb 15, 2026", readTime: "4 min read",
+    body: `<p>I love weird and wacky people, and you should too. Not only are they refreshing to be around, and a respite from tedious small talk, but they are also the future.</p>
+<p>Nietzsche (no shock) puts it better than me:</p>
+<blockquote>'More and more it seems to me that the philosopher, being of necessity a [person] of tomorrow and the day after tomorrow, has always found [themselves]… in contradiction to [their] today: [their] enemy was ever the ideal of today.'</blockquote>
+<p>The people that change the world, the 'philosopher' Nietzsche envisions, are often weird. They have a novel worldview, a zest for life, and they say 'yes' to themselves and their vision. They 'know thyself' as the Oracle of Delphi instructs. And, they follow the one need for humans to live a good life — eccentrics 'give style to one's character'. Eccentrics are definitionally authentic. Why blend in when you were born to stand out, why play it safe when you only get one life, why would you repress or suppress an eccentric and honest voice?</p>
+<p>There is a reason these types of people have disproportionate success, especially in the realm of founding companies, which in turn informs the approach of VC firms like Blackbird Ventures, who back 'wild heart founders'. When eccentricity meets ambition, conviction, and talent, like the 'philosopher' Nietzsche identifies, success is almost inevitable. Many of the most successful people financially would be classed as 'weird' (not that financial success is a goal to aspire to in isolation, nor is all innovation a good thing).</p>
+<p>And yet, in society, such people are torn down. One thing I hate is when weird and wacky people are scorned for putting themselves out into the world. It is especially the case in Australia, as a result of cultural tall poppy syndrome, but everywhere in the world people that create are made fun of by people that consume and have never had the confidence or courage to make anything meaningful in their life. It is the same vibe as a 50-year old, mildly obese man commenting on the skill level of the athletes on the TV while he watches, beer-gutted-and-chips-in-hand.</p>
+<p>Roosevelt's 'The Man in the Arena' captures this sentiment well:</p>
+<blockquote>'It is not the critic who counts; not the man who points out how the strong man stumbles, or where the doer of deeds could have done them better. The credit belongs to the man who is actually in the arena, whose face is marred by dust and sweat and blood; who strives valiantly; who errs, who comes short again and again, because there is no effort without error and shortcoming; but who does actually strive to do the deeds; who knows great enthusiasms, the great devotions; who spends himself in a worthy cause; who at the best knows in the end the triumph of high achievement, and who at the worst, if he fails, at least fails while daring greatly, so that his place shall never be with those cold and timid souls who neither know victory nor defeat.'</blockquote>
+<p>Another reason I argue you should surround yourself with weird and wonderful people is that I believe in the concept of interpersonal osmosis. Show me your friends and I'll show you your future, you represent a tapestry of the people with whom you surround yourself, etc. I firmly believe that the people you choose directly influence your life — if you surround yourself with unique and interesting people, you are offered the rare privilege of being around free thinkers who challenge and sharpen your own worldview and, by extension, challenge and sharpen your own life.</p>
+<p>Why would you disregard the new thinkers, the quirky innovators, and most importantly the ones who are going out there and doing the thing others are scared to do?</p>
+<p>I'll end with a classic Nietzsche quote:</p>
+<blockquote>'How little you know of happiness — you comfortable people! The secret of a fulfilled life is — live dangerously! Build your cities on the slopes of Mt Vesuvius!'</blockquote>`
+  },
+  name: {
+    title: "What's in a name?",
+    epigraph: "'The limits of my language mean the limits of my world' – Ludwig Wittgenstein",
+    date: "Feb 15, 2026", readTime: "4 min read",
+    body: `<p>Inasmuch as language has the power to preserve and give life, the first part of this article will argue that there is some substance to the position that language, but specifically the act of naming, takes away as well as it gives. The second part of this article will posit the power of a name, and the underrated importance of the naming process.</p>
+<p>Indeed, as Hegel puts it, whenever we name a thing, the named thing loses its singularity and becomes subsumed under a universal concept. This process negates the individual character of a thing.</p>
+<p>On its face, the act of naming something seems to be a clear process vesting that thing with life. Naming something a 'hammer' or 'cat', or naming a baby 'Jeff' allows these things to be remembered and communicated about, giving them lives in thought and language. However, for Hegel, to name a thing is to 'nullif[y it] as a being on its own account'.</p>
+<p>Hegel considers this thesis through the narration in the Biblical Genesis of how living creatures came to be named: Adam was vested with the powers of nomenclature — 'whatsoever Adam called every living creature, that was the name thereof'.</p>
+<p>Adam's naming of the animals, for Hegel, was 'not merely an act of categorization but of domination, of control. For it abolishes their independent existence, their being as "natural" signs, their status as things. And it recreates them as ideas in the mind… once the name is created, once the act of naming is accomplished, the name itself now persists, as something concrete, as something that might outlive its creator and indeed the very thing it named.'</p>
+<p>If I name my child Jeff, for instance, my child becomes categorisable into a class of 'Jeffs' and the act of naming thus 'killeth' individuality, just as naming something a 'hammer' or 'cat' renders these things into particular classes of 'hammers' and 'cats'. The individual becomes a part of a sign type, rather than remaining a thing in itself: '[w]hen we use something as a sign, we abstract from its existence as a thing.' Naming things gives those things life in the medium of language by giving them a representable sign, yet this process also precludes singularity by subsuming these things into universal classes of things. Thus, the name takes away from the thing itself, and the written name perpetuates this separation by acting as a permanent marker.</p>
+<blockquote>'What's in a name? That which we call a rose/ By any other name would smell as sweet' – Juliet, Act II, Scene II, Romeo and Juliet.</blockquote>
+<p>However, against this backdrop, being intentional about naming can vest a thing with all the benefits that come with individuality. Nominative determinism, the theory that names act as a self-fulfilling prophecy, has often been considered as a joke, however I argue there is some truth to it.</p>
+<p>Want to be better than you are? Try 2XU. Want to be the best 100m runner in history? Have the last name 'Bolt'.</p>
+<p>Naming a thing, where that thing is not part of a type, has the capacity to shape the narrative of that singular thing. The limits of our language might mean the limits of our world, but that means we have the power to expand our world through novel language in the act of naming.</p>
+<p>The Sapir-Whorf hypothesis — that the language accessible to us influences our thought and cognition — is relevant here. Phrases like 'climate change' and 'Artificial Intelligence' frame our thinking and our world in a new way, just as the Australian Indigenous language of Guugu Ymithirr frames its speakers to think in cardinal terms (north, east, south, west) instead of up, down, left, right.</p>
+<p>The idiosyncrasies of our particular language can also shape our feelings — the Portuguese have a word ('saudade') for the bittersweet longing for an absent person/thing, and the German have a word ('schadenfreude') for pleasure at another's misfortune. German and Portuguese speakers have linguistic access to the acknowledgment and understanding of an emotion other language speakers cannot easily articulate. Words like these help to order our own inner lives: my capacity to understand that I am 'sad' or 'happy' helps me act accordingly.</p>
+<p>In that vein, the way we refer to ourselves animates our personality and gives us vitality as an authentic, living, organism — to call ourselves a 'hard worker' or 'shy' or 'bubbly' grants us an active way of relating to the world around us. Indeed, the linguistic capacity to refer to ourselves in the first person arguably shapes the way we navigate our lives. As the subject, we become a life that can be told and cohesively structured as an intelligible narrative. Language thus gives us life: it allows our experience to be made sense of and communicated in ways that are translatable to other minds, such that an otherwise unintelligible stream of impressions becomes an ordered story. Giving names to ourselves and to things associated with us becomes our own North Star in wayfinding our way through a changing world.</p>
+<p>Thus, there is a lot in a name. It can reduce a singular thing to a universal type, and yet it can empower a thing with certain qualities, and can shape the way we view the world.</p>`
+  },
+  useless: {
+    title: "The Use of Useless Things",
+    epigraph: "'When a person thinks only of outcome and not at all of journey, they lose the greatness that is found in loving process.'",
+    date: "Feb 15, 2026", readTime: "5 min read",
+    body: `<p>If it weren't for Steve Jobs attending calligraphy classes at university, it's possible we wouldn't have the selection of fonts we do now on our computers. This would be tragic for a number of reasons, foremost among them being that you might not presently be reading this article through the voice of this brilliant print.</p>
+<p>However, there is a more relevant reason to invoke Jobs and calligraphy. In my most recent uni semester, my Hindu Mythology lecturer sat our class down and, convincingly, told us all there was value in learning 'useless'* things. She argued that, at a time where Arts education fees are extortionate and subjects are only departmentally approved insofar as they contribute to a 'professionally transferable skillset', there was an inherent value to learning 'useless' things. The study of ancient Sanskrit texts might not help us score a 9-5, she conceded, but it would potentially cultivate a lasting love of myth and storytelling.</p>
+<p>The need to stress the value of the 'useless' becomes more urgent at a time where educational delivery seems to be driven by outcome, not process. Increasingly, secondary schools seem to publish their proudest articles on final year results day. There seems to be less emphasis on the time a student discovered their passion for architecture in a session on brutalism, or how a music class on Charlie Parker sparked another student's love for jazz music. Instead, the focus is on the number assigned to that student's performance. This frames teaching and learning around objectively measurable outcomes, rather than encouraging students and teachers to cultivate moments of subjective and authentic passion. This is part of the reason students spend their time obsessing over outcome-minded tools like ATAR Calculator, rather than devoting themselves to subjects for which they have genuine love.</p>
+<p>In my university experience, the same has applied. My own Arts degree, supposed to represent a time of broad engagement with interests for interests' sake, has a mandated 'Professional Futures' component, wherein 24 credit points of my studies must be allocated towards attaining 'career-ready skills'. Education institutions should not be exam factories and workforce incubators, they should be hubs of exploration, pushing students to discover their passions such that they can live a professional life to be proud of and not resent.</p>
+<p>The irony of the current institutional approach is that an exclusive focus on outcome often results in that outcome not being achieved. A tennis player doesn't play well when they are thinking about the game score during a point, rather than focussing on playing each shot well. Likewise, one does not score well in an exam when constantly thinking about the likely mark they will receive for their answer, but instead does score well when they are critically attentive to and willing to meet the demands of the specific question. Furthermore, one does not present well in a job interview when they care more about the salary attached to the job than love of the job itself. Trust the process is a cliche, but it holds.</p>
+<p>A poem written by Chuang Tzu and shared with me by my high school Philosophy teacher, a bastion of what education should be, is appropriate here.</p>
+<blockquote>When an archer is shooting for nothing<br>He has all his skill.<br>If he shoots for a brass buckle<br>He is already nervous.<br>If he shoots for a prize of gold<br>He goes blind<br>Or sees two targets —<br>He is out of his mind.<br><br>His skill has not changed, But the prize<br>Divides him. He cares,<br>He thinks more of winning<br>Than of shooting —<br>And the need to win<br>Drains him of power.</blockquote>
+<p>When a person thinks only of outcome and not at all of journey, they lose the greatness that is found in loving process.</p>
+<p><em>*I use 'useless' to reflect the narrow definition of 'use' in terms of vocational applicability.</em></p>`
+  }
+};
+
+// PAGE NAVIGATION
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  window.scrollTo(0, 0);
+  triggerFades();
+}
+
+function showPost(key) {
+  const post = posts[key];
+  if (!post) return;
+  const html = `
+    <div class="post-meta">${post.date} &nbsp;·&nbsp; ${post.readTime}</div>
+    <div class="post-title">${post.title}</div>
+    <div class="post-epigraph">${post.epigraph}</div>
+    <div class="post-body">${post.body}</div>
+    <hr class="post-divider">
+    <div class="post-next">// Read next</div>
+    <a href="#" class="btn-ghost" onclick="showPage('home'); return false;">← Back to all issues</a>
+  `;
+  document.getElementById('post-content').innerHTML = html;
+  showPage('post');
+}
+
+function triggerFades() {
+  setTimeout(() => {
+    document.querySelectorAll('.fade-in').forEach(el => el.classList.add('visible'));
+  }, 100);
+}
+
+// FORM
+function handleSubmit(e) {
+  e.preventDefault();
+  document.getElementById('submit-confirm').style.display = 'block';
+  e.target.reset();
+}
+
+// CURSOR
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mx = 0, my = 0, rx = 0, ry = 0;
+document.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; });
+function animateCursor() {
+  cursor.style.left = mx + 'px'; cursor.style.top = my + 'px';
+  rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+  ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+  requestAnimationFrame(animateCursor);
+}
+animateCursor();
+document.querySelectorAll('a, button').forEach(el => {
+  el.addEventListener('mouseenter', () => { cursor.style.width = '14px'; cursor.style.height = '14px'; ring.style.opacity = '0'; });
+  el.addEventListener('mouseleave', () => { cursor.style.width = '8px'; cursor.style.height = '8px'; ring.style.opacity = '1'; });
+});
+
+// INIT FADES
+triggerFades();
+</script>
+</body>
+</html>
